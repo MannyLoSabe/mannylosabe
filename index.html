@@ -1,21 +1,497 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Il mio sito personale</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding-top: 50px;
-            background-color: #f4f4f9;
-            color: #333;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diagramma Fe-C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: grafico a sinistra, scheda di definizione a destra (sticky), indice di punti e zone sotto. */
+:root{
+  --bg:#EBEFF2; --surface:#F7F9FA; --ink:#12202B; --ink2:#46576A; --line:#C3CCD5; --grid:#D5DCE3;
+  --accent:#B5361F; --halo:#F7F9FA; --chip:#E3E9EE;
+  --f-liq:#F5C25B; --f-sl:#F29B62; --f-aus:#6FB0E2; --f-cem:#A98BDB; --f-low:#7CC49A; --zop:.46;
+  --display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F161C; --surface:#172029; --ink:#E6EDF2; --ink2:#9DB0C0; --line:#2B3947; --grid:#233039;
+    --accent:#FF8A6B; --halo:#172029; --chip:#22303C;
+    --f-liq:#C9922B; --f-sl:#C96A33; --f-aus:#3F82B8; --f-cem:#7F62B8; --f-low:#3F9468; --zop:.55;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F161C; --surface:#172029; --ink:#E6EDF2; --ink2:#9DB0C0; --line:#2B3947; --grid:#233039;
+  --accent:#FF8A6B; --halo:#172029; --chip:#22303C;
+  --f-liq:#C9922B; --f-sl:#C96A33; --f-aus:#3F82B8; --f-cem:#7F62B8; --f-low:#3F9468; --zop:.55;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1260px;margin:0 auto}
+header{margin-bottom:20px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(34px,5vw,52px);line-height:1;margin:0 0 8px;letter-spacing:.01em;text-wrap:balance}
+.lead{margin:0;max-width:62ch;color:var(--ink2)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 370px;grid-template-areas:"chart panel" "index index";gap:20px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+.chart{grid-area:chart;min-width:0}
+.panel{grid-area:panel;padding:20px 20px 22px;min-width:0}
+.index{grid-area:index;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:20px;min-width:0}
+.index>section{padding:18px 20px 20px;min-width:0}
+@media (max-width:1060px){
+  .grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"chart" "panel" "index"}
+  .panel{position:static}
+  .index{grid-template-columns:minmax(0,1fr)}
+}
+/* barra comandi */
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line)}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button,.tog{font:500 13px var(--sans);color:var(--ink);background:var(--chip);border:1px solid transparent;border-radius:4px;padding:6px 10px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.tgs{display:flex;flex-wrap:wrap;gap:6px 14px}
+.tgs label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink2);cursor:pointer}
+.tgs input{accent-color:var(--accent);width:15px;height:15px;margin:0}
+button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.scroll{overflow-x:auto;padding:6px 6px 0}
+svg#svg{display:block;width:100%;min-width:760px;height:auto;touch-action:manipulation}
+.note{margin:0;padding:8px 16px 14px;font-size:12.5px;color:var(--ink2)}
+.sw{display:inline-block;vertical-align:middle;width:26px;height:0;border-top:2px solid var(--ink);margin:0 6px 2px 0}
+.sw.dash{border-top:2px dashed var(--ink2)}
+/* svg */
+.gl{stroke:var(--grid);stroke-width:1}
+.axl{stroke:var(--ink);stroke-width:1.4;fill:none}
+.tk{font:500 11px var(--mono);fill:var(--ink2)}
+.at{font:600 12px var(--sans);fill:var(--ink)}
+.ln{fill:none;stroke:var(--ink);stroke-width:2;stroke-linejoin:round}
+.ln.thin{stroke-width:1.1}
+.ln.dot{stroke-width:1.8;stroke-dasharray:2 3.5}
+.ln.gd{stroke:var(--ink2);stroke-width:1.3;stroke-dasharray:6 5}
+.ln.st{stroke:var(--ink2);stroke-width:1.7;stroke-dasharray:8 5}
+.arh{fill:var(--ink2)}
+.z{cursor:pointer;stroke:transparent;stroke-width:1;pointer-events:all;fill-opacity:var(--zop);transition:fill-opacity .12s}
+.z.liq{fill:var(--f-liq)} .z.sl{fill:var(--f-sl)} .z.aus{fill:var(--f-aus)} .z.cem{fill:var(--f-cem)} .z.low{fill:var(--f-low)}
+.z.thin{stroke-width:7}
+.z:hover,.z.hov{fill-opacity:.8}
+.z.sel{fill-opacity:.9;stroke:var(--accent);stroke-width:2.5;stroke-linejoin:round}
+.z.thin.sel{stroke-width:2.5}
+.zl{font:600 12px var(--sans);fill:var(--ink);text-anchor:middle;pointer-events:none;paint-order:stroke;stroke:var(--halo);stroke-width:3px;stroke-opacity:.55}
+.tag{cursor:pointer}
+.tag text{font:600 11.5px var(--sans);fill:var(--ink);paint-order:stroke;stroke:var(--halo);stroke-width:3px}
+.tag line{stroke:var(--ink2);stroke-width:1}
+.tag circle{fill:var(--ink2)}
+.tag:hover text,.tag.sel text{fill:var(--accent)}
+.tag.sel line{stroke:var(--accent)}
+.pt{cursor:pointer}
+.pt .hit{fill:transparent}
+.pt .dot{fill:var(--ink);stroke:var(--halo);stroke-width:1.5}
+.pt.s .dot{fill:var(--halo);stroke:var(--ink2);stroke-width:2}
+.pt .ring{fill:none;stroke:var(--accent);stroke-width:2.5;opacity:0}
+.pt.sel .ring,.pt:hover .ring{opacity:1}
+.pt:hover .ring:not(.on){opacity:.55}
+.pt.sel .ring{opacity:1}
+.pt text{font:700 13px var(--display);letter-spacing:.02em;fill:var(--ink);paint-order:stroke;stroke:var(--halo);stroke-width:3.5px;pointer-events:none}
+.pt.sel text{fill:var(--accent)}
+#tip{position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--surface);font:500 12.5px var(--sans);padding:5px 9px;border-radius:4px;max-width:260px;opacity:0;transition:opacity .08s}
+#tip.on{opacity:1}
+/* scheda */
+.kick{font:600 11.5px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);margin:0 0 8px}
+.panel h2{font-family:var(--display);font-weight:700;font-size:30px;line-height:1.05;margin:0 0 12px;display:flex;gap:10px;align-items:baseline;text-wrap:balance}
+.panel h2 .id{font-size:44px;color:var(--accent);line-height:.9;flex:none}
+.coords{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.coords span{font:500 12.5px var(--mono);background:var(--chip);border-radius:3px;padding:3px 8px}
+.def{margin:0 0 16px;font-size:15.5px}
+dl{margin:0 0 16px;display:grid;gap:10px}
+dl div{border-top:1px solid var(--line);padding-top:8px}
+dt{font:600 11.5px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink2);margin:0 0 2px}
+dd{margin:0;font-size:14.5px}
+.rel h3{font:600 11.5px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink2);margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:500 13px var(--sans);color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:4px;padding:4px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;text-align:left}
+.chip:hover{border-color:var(--ink2)}
+.chip.sel{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.chip i{width:11px;height:11px;border-radius:2px;flex:none;opacity:.9}
+.chip.pc{font:700 15px var(--display);min-width:34px;justify-content:center;padding:3px 8px}
+.index h2{font-family:var(--display);font-weight:700;font-size:22px;margin:0 0 4px}
+.index p.sub{margin:0 0 12px;font-size:13px;color:var(--ink2)}
+.grp{margin:0 0 14px}
+.grp h3{font:600 11.5px var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink2);margin:0 0 7px}
+</style>
 </head>
 <body>
-    <h1>Benvenuto nel mio sito personale!</h1>
-    <p>Questo sito è ospitato gratuitamente su GitHub Pages.</p>
+<div class="wrap">
+  <header>
+    <h1>Diagramma Fe-C</h1>
+    <p class="lead">Clicca un punto o una zona del diagramma ferro-carbonio per leggerne la definizione. I punti si trovano anche nell’elenco sotto il grafico, utile soprattutto per le zone più sottili.</p>
+  </header>
+
+  <div class="grid">
+    <section class="card chart" aria-label="Diagramma di stato ferro-carbonio">
+      <div class="bar">
+        <div class="seg" id="views" role="group" aria-label="Ingrandimento"></div>
+        <div class="tgs">
+          <label><input type="checkbox" id="tgStable" checked> Sistema stabile (grafite)</label>
+          <label><input type="checkbox" id="tgZones" checked> Nomi delle zone</label>
+          <label><input type="checkbox" id="tgPts" checked> Punti</label>
+        </div>
+      </div>
+      <div class="scroll"><svg id="svg" viewBox="0 0 900 640" role="group" aria-label="Diagramma Fe–Fe₃C con punti e zone selezionabili"></svg></div>
+      <p class="note"><span class="sw"></span>Linee continue: sistema metastabile Fe–Fe₃C (cementite). <span class="sw dash" style="margin-left:10px"></span>Linee tratteggiate: sistema stabile Fe–grafite, punti con apice (′). I tenori di carbonio sono letti dal diagramma e in altri testi possono differire di qualche centesimo.</p>
+    </section>
+
+    <aside class="card panel" id="panel" aria-live="polite"></aside>
+
+    <div class="index">
+      <section class="card"><h2>Punti</h2><p class="sub">Tocca una lettera per aprire la definizione.</p><div id="listPts"></div></section>
+      <section class="card"><h2>Zone</h2><p class="sub">Il colore indica la famiglia di fasi.</p><div id="listZones"></div></section>
+    </div>
+  </div>
+</div>
+<div id="tip" role="presentation"></div>
+
+<script>
+/* ---------- dati ---------- */
+const PTS=[
+{id:'A',x:0,T:1538,k:'m',l:[8,-8,'start'],nm:'Fusione del ferro puro',co:['0 % C','1538 °C'],
+ d:'Temperatura di fusione del ferro puro. Qui liquido e ferrite δ coesistono a una sola temperatura, perché con un solo componente la solidificazione avviene a temperatura costante. Da A partono la linea liquidus AB e la linea solidus AH.',
+ r:[['Fasi','liquido ⇄ ferrite δ (cubica a corpo centrato)'],['Linee che partono da A','liquidus AB e solidus AH']],rel:['p:B','p:N','z:l_d','z:liq']},
+{id:'B',x:.53,T:1493,k:'m',l:[8,-8,'start'],nm:'Liquido peritettico',co:['≈ 0,53 % C','1493 °C'],
+ d:'Estremo destro della retta peritettica a 1493 °C. Indica il tenore di carbonio del liquido che prende parte alla reazione peritettica: questo liquido reagisce con la ferrite δ (circa 0,09 % C) e forma austenite (punto I, circa 0,17 % C).',
+ r:[['Reazione','L (0,53 % C) + δ (0,09 % C) → γ (0,17 % C), a 1493 °C'],['Leghe interessate','da circa 0,09 a 0,53 % C']],rel:['p:I','p:A','z:l_d','z:g_l']},
+{id:'I',x:.17,T:1493,k:'m',l:[4,22,'start'],nm:'Punto peritettico',co:['≈ 0,17 % C','1493 °C'],
+ d:'Composizione dell’austenite che si forma con la reazione peritettica a 1493 °C. Una lega con esattamente questo tenore di carbonio, raffreddandosi, consuma tutto il liquido e tutta la ferrite δ e diventa austenite pura. In molti testi questo punto è indicato con la lettera J.',
+ r:[['Reazione','L + δ → γ'],['Sotto 0,17 % C','avanza ferrite δ, che poi si trasforma in austenite'],['Sopra 0,17 % C','avanza liquido, che poi solidifica in austenite']],rel:['p:B','z:d_g','z:g']},
+{id:'N',x:0,T:1394,k:'m',l:[8,16,'start'],nm:'Trasformazione δ ⇄ γ del ferro puro',co:['0 % C','1394 °C'],
+ d:'Temperatura a cui il ferro puro passa da ferrite δ (cubica a corpo centrato) ad austenite γ (cubica a facce centrate) in raffreddamento. È detta anche punto A4. Da N partono le linee NH e NI, che delimitano il campo ferrite δ + austenite.',
+ r:[['Fasi','δ (CCC) ⇄ γ (CFC)'],['Punto critico','A4']],rel:['p:G','z:d','z:d_g']},
+{id:'G',x:0,T:911,k:'m',l:[8,-7,'start'],nm:'Trasformazione γ ⇄ α del ferro puro',co:['0 % C','911 °C'],
+ d:'Temperatura a cui il ferro puro passa da austenite γ a ferrite α (cubica a corpo centrato). È detta anche punto A3. Da G parte la linea GS, lungo cui la temperatura di inizio trasformazione scende all’aumentare del carbonio, fino a 723 °C.',
+ r:[['Fasi','γ (CFC) ⇄ α (CCC)'],['Punto critico','A3'],['Nel diagramma','compare solo il valore 911 °C, senza la lettera']],rel:['p:S','p:N','z:g_a','z:g']},
+{id:'M',x:0,T:768,k:'m',l:[8,-7,'start'],nm:'Punto di Curie del ferro',co:['0 % C','768 °C'],
+ d:'Temperatura (punto A2) sotto la quale la ferrite diventa ferromagnetica. Non è un cambiamento di fase: il reticolo cristallino resta lo stesso, cambia solo il comportamento magnetico.',
+ r:[['Fase','ferrite α, paramagnetica sopra 768 °C e ferromagnetica sotto'],['Nel diagramma','accanto a M compare 723 °C, che è la temperatura dell’eutettoide (linea PSK)']],rel:['p:O','z:a']},
+{id:'O',x:.5,T:768,k:'m',l:[7,-8,'start'],nm:'Curie sulla linea GS',co:['≈ 0,5 % C','768 °C'],
+ d:'Punto in cui la linea GS incontra la temperatura di Curie, a circa 0,5 % C. A sinistra di O la ferrite si separa dall’austenite sopra 768 °C e diventa ferromagnetica più avanti, raffreddando; a destra di O si separa già sotto 768 °C.',
+ r:[['Posizione','intersezione tra la linea GS e la retta MO a 768 °C']],rel:['p:M','p:S','z:g_a']},
+{id:'P',x:.022,T:723,k:'m',l:[7,19,'start'],nm:'Massima solubilità nella ferrite',co:['≈ 0,02 % C','723 °C'],
+ d:'Tenore massimo di carbonio che la ferrite α può tenere in soluzione solida, circa 0,02 % a 723 °C. Il carbonio occupa gli spazi interstiziali del reticolo, che nella ferrite sono molto piccoli: per questo la solubilità è così bassa.',
+ r:[['Fase','ferrite α satura'],['Linea PQ','la solubilità scende al diminuire della temperatura; l’eccesso precipita come cementite terziaria']],rel:['p:Q','p:S','z:a','z:a_p']},
+{id:'Q',x:.008,T:500,k:'m',l:[8,-8,'start'],nm:'Solubilità a temperatura ambiente',co:['≈ 0,008 % C','temperatura ambiente'],
+ d:'Solubilità del carbonio nella ferrite a temperatura ambiente, circa 0,008 %. Alla scala del diagramma coincide praticamente con l’asse del ferro puro.',
+ r:[['Posizione','in fondo al diagramma, dove l’asse delle temperature si ferma a 500 °C']],rel:['p:P','z:a']},
+{id:'S',x:.8,T:723,k:'m',l:[7,19,'start'],nm:'Punto eutettoide',co:['≈ 0,8 % C','723 °C'],
+ d:'L’austenite con circa 0,8 % di carbonio si trasforma, a temperatura costante, in perlite: un aggregato lamellare di ferrite α (0,02 % C) e cementite Fe₃C (6,67 % C). È la temperatura critica A1, comune a tutti gli acciai.',
+ r:[['Reazione','γ (0,8 % C) → α (0,02 % C) + Fe₃C (6,67 % C)'],['Prodotto','perlite'],['Acciaio eutettoide','0,8 % C, struttura interamente perlitica'],['Valore','0,8 % in questo diagramma, 0,77 % in altri testi']],rel:['p:E','p:P','p:K','z:g','z:a_p','z:p_cs']},
+{id:'E',x:2.06,T:1147,k:'m',l:[7,18,'start'],nm:'Massima solubilità nell’austenite',co:['≈ 2,06 % C','1147 °C'],
+ d:'Tenore massimo di carbonio che l’austenite può tenere in soluzione solida, circa 2,06 % a 1147 °C. È anche il limite convenzionale tra acciai (sotto) e ghise (sopra).',
+ r:[['Acciai','fino a circa 2,06 % C'],['Ghise','oltre circa 2,06 % C'],['Valore','2,06 % in questo diagramma, 2,11 % o 2,14 % in altri testi']],rel:['p:C','p:S','z:g','z:g_cs']},
+{id:'C',x:4.3,T:1147,k:'m',l:[7,18,'start'],nm:'Punto eutettico',co:['≈ 4,3 % C','1147 °C'],
+ d:'Il liquido con circa 4,3 % di carbonio solidifica a temperatura costante, a 1147 °C, in ledeburite: un miscuglio di austenite (2,06 % C) e cementite (6,67 % C). Nel diagramma è la composizione con la temperatura di fusione più bassa.',
+ r:[['Reazione','L (4,3 % C) → γ (2,06 % C) + Fe₃C (6,67 % C)'],['Prodotto','ledeburite'],['Ghisa eutettica','4,3 % C, struttura interamente ledeburitica']],rel:['p:E','p:F','z:liq','z:led_cp','z:l_cp']},
+{id:'D',x:6.67,T:1330,k:'m',l:[-8,-6,'end'],nm:'Fusione della cementite',co:['6,67 % C','≈ 1330 °C'],
+ d:'Punto di fusione della cementite Fe₃C. La cementite è un composto metastabile e il suo punto di fusione è difficile da misurare: il diagramma lo mostra a circa 1330 °C, ma nei testi si trovano anche valori più bassi, intorno a 1230–1250 °C.',
+ r:[['Linea CD','liquidus della cementite primaria, a tratteggio fine']],rel:['p:C','p:F','z:l_cp','z:l_gr']},
+{id:'F',x:6.67,T:1147,k:'m',l:[-8,17,'end'],nm:'Estremo della linea eutettica',co:['6,67 % C','1147 °C'],
+ d:'Estremo destro della linea eutettica ECF, sul tenore della cementite. Rappresenta la composizione della cementite che si forma insieme all’austenite nella reazione eutettica.',
+ r:[['Linea ECF','solidus delle ghise: sotto di essa non c’è più liquido']],rel:['p:C','p:E','p:K','z:l_cp','z:led_cp']},
+{id:'K',x:6.67,T:723,k:'m',l:[-8,17,'end'],nm:'Estremo della linea eutettoide',co:['6,67 % C','723 °C'],
+ d:'Estremo destro della linea eutettoide PSK, sul tenore della cementite. La linea PSK vale per tutte le leghe da circa 0,02 a 6,67 % C: a 723 °C l’austenite rimasta si trasforma in perlite.',
+ r:[['Linea PSK','temperatura critica A1']],rel:['p:S','p:P','p:F','z:cp_led']},
+{id:'L',x:6.67,T:500,k:'m',l:[-8,-8,'end'],nm:'Cementite a temperatura ambiente',co:['6,67 % C','25 % in atomi'],
+ d:'Composizione della cementite Fe₃C: 6,67 % di carbonio in peso, pari al 25 % in atomi, cioè un atomo di carbonio ogni tre di ferro. È un carburo molto duro e fragile. Nel diagramma è una linea verticale perché ha composizione fissa.',
+ r:[['Fase','Fe₃C, carburo di ferro']],rel:['p:D','p:F','p:K','z:cp_led']},
+{id:"C'",x:4.26,T:1153,k:'s',l:[-7,-8,'end'],nm:'Punto eutettico stabile',co:['≈ 4,26 % C','1153 °C'],
+ d:'Eutettico del sistema stabile ferro-grafite: il liquido con circa 4,26 % C solidifica a 1153 °C in austenite (punto E′) e grafite, invece che in austenite e cementite. Avviene con raffreddamento lento o in presenza di silicio, come nelle ghise grigie.',
+ r:[['Reazione','L → γ (2,03 % C) + grafite'],['Rispetto al punto C','circa 6 °C più alto, con grafite al posto della cementite']],rel:['p:C',"p:E'",'p:D\'','z:l_gr']},
+{id:"E'",x:2.03,T:1153,k:'s',l:[-7,-8,'end'],nm:'Massima solubilità nell’austenite, sistema stabile',co:['≈ 2,03 % C','1153 °C'],
+ d:'Massimo tenore di carbonio nell’austenite secondo il sistema stabile, circa 2,03 % a 1153 °C, leggermente inferiore al punto E del sistema metastabile.',
+ r:[['Linea E′S′','limite di solubilità del carbonio nell’austenite verso la grafite']],rel:['p:E',"p:C'","p:S'"]},
+{id:"S'",x:.7,T:738,k:'s',l:[-8,-9,'end'],nm:'Punto eutettoide stabile',co:['≈ 0,7 % C','738 °C'],
+ d:'Eutettoide del sistema stabile: l’austenite con circa 0,7 % C si trasforma a 738 °C in ferrite e grafite, invece che in perlite. Si ottiene solo con raffreddamenti molto lenti o con ghise ad alto tenore di silicio.',
+ r:[['Reazione','γ (0,7 % C) → α + grafite']],rel:['p:S',"p:P'","p:K'"]},
+{id:"D'",x:5.4,T:1590,k:'s',l:[-8,13,'end'],nm:'Liquidus della grafite',co:['≈ 5,4 % C','oltre 1550 °C'],
+ d:'Estremo superiore della linea C′D′, il liquidus della grafite: a destra di questa linea il liquido, raffreddandosi, comincia a separare grafite primaria. La grafite è carbonio puro (100 % C) e cade fuori dalla scala del diagramma, perciò la linea è interrotta in alto.',
+ r:[['Linea C′D′','inizio della cristallizzazione della grafite primaria']],rel:["p:C'",'z:l_gr','z:liq']},
+{id:"F'",x:6.67,T:1153,k:'s',l:[-8,-8,'end'],nm:'Estremo dell’eutettica stabile',co:['6,67 % C','1153 °C'],
+ d:'Estremo destro della linea eutettica stabile E′C′F′ a 1153 °C. La freccia nel diagramma indica che la linea prosegue verso la grafite (100 % C), oltre la scala del grafico.',
+ r:[['Linea E′C′F′','solidus delle ghise nel sistema stabile']],rel:["p:C'",'p:F','z:l_gr']},
+{id:"K'",x:6.67,T:738,k:'s',l:[-8,-8,'end'],nm:'Estremo dell’eutettoide stabile',co:['6,67 % C','738 °C'],
+ d:'Estremo destro della linea eutettoide stabile P′S′K′ a 738 °C. Anche qui la freccia indica che la linea continua verso la grafite, oltre la scala del diagramma.',
+ r:[['Linea P′S′K′','temperatura della trasformazione austenite → ferrite + grafite']],rel:["p:S'",'p:K']},
+{id:"P'",x:.02,T:738,k:'s',l:[8,-9,'start'],nm:'Massima solubilità nella ferrite, sistema stabile',co:['≈ 0,02 % C','738 °C'],
+ d:'Massima solubilità del carbonio nella ferrite α secondo il sistema stabile, a 738 °C, con un valore praticamente uguale a quello del punto P.',
+ r:[['Linea P′S′K′','eutettoide del sistema stabile']],rel:['p:P',"p:S'"]}
+];
+
+const A=[0,1538],B=[.53,1493],H=[.09,1493],I=[.17,1493],N=[0,1394],G=[0,911],S=[.8,723],P=[.022,723],Q=[.008,500],
+ E=[2.06,1147],C=[4.3,1147],F=[6.67,1147],K=[6.67,723],L=[6.67,500],D=[6.67,1330],M=[0,768],O=[.5,768],
+ C1=[4.26,1153],D1=[5.4,1590];
+function quad(a,c,b,n=28){const o=[];for(let i=0;i<=n;i++){const t=i/n,u=1-t;o.push([u*u*a[0]+2*u*t*c[0]+t*t*b[0],u*u*a[1]+2*u*t*c[1]+t*t*b[1]]);}return o;}
+const LBC=quad(B,[2.0,1405],C), GS=quad(G,[.2,800],S), CD=quad(C,[5.6,1290],D);
+const rev=a=>a.slice().reverse();
+
+const ZONES=[
+{id:'liq',fam:'liq',nm:'Liquido (L)',ty:'Campo monofase',co:['sopra la linea liquidus ABC'],
+ poly:[[0,1600],[5.42,1600],C1,C,...rev(LBC),A], polyOff:[[0,1600],[6.67,1600],D,...rev(CD),...rev(LBC),A],
+ lab:[3.25,1427,['Liquido']],
+ d:'Soluzione liquida di carbonio nel ferro fuso. Sopra la linea liquidus ABC ogni lega è completamente fusa: c’è una sola fase, omogenea e senza struttura cristallina. La temperatura più bassa a cui esiste il liquido è 1147 °C, nel punto eutettico C.',
+ r:[['Fase','liquido'],['Temperatura minima','1147 °C, nel punto eutettico C']],rel:['p:A','p:B','p:C','z:g_l','z:l_cp','z:l_d']},
+{id:'l_d',fam:'sl',nm:'Liquido + ferrite δ',ty:'Campo bifase',co:['0–0,53 % C','1493–1538 °C'],
+ poly:[A,B,H],tag:[1550,.22,1510],lab:null,
+ d:'Zona stretta compresa tra il liquidus AB e il solidus AH, chiusa in basso dalla retta peritettica a 1493 °C. Raffreddando, dal liquido si separano cristalli di ferrite δ e il liquido rimasto si arricchisce di carbonio.',
+ r:[['Fasi','liquido + ferrite δ'],['Leghe','acciai con meno di circa 0,53 % C']],rel:['p:A','p:B','z:liq','z:d']},
+{id:'d',fam:'aus',nm:'Ferrite δ',ty:'Campo monofase',co:['0–0,09 % C','1394–1538 °C'],
+ poly:[A,H,N],tag:[1450,.03,1470],thin:1,lab:null,
+ d:'Soluzione solida interstiziale di carbonio in ferro con reticolo cubico a corpo centrato, stabile solo ad alta temperatura. Il campo è una striscia sottile che contiene al massimo circa 0,09 % C, a 1493 °C.',
+ r:[['Fase','ferrite δ (CCC)'],['Evoluzione','raffreddando, si trasforma in austenite']],rel:['p:A','p:N','z:d_g','z:l_d']},
+{id:'d_g',fam:'aus',nm:'Ferrite δ + austenite',ty:'Campo bifase',co:['0–0,17 % C','1394–1493 °C'],
+ poly:[N,H,I],tag:[1350,.1,1452],lab:null,
+ d:'Triangolo compreso tra le linee NH e NI e la retta peritettica. In raffreddamento la ferrite δ si trasforma progressivamente in austenite e le due fasi coesistono.',
+ r:[['Fasi','ferrite δ + austenite']],rel:['p:N','p:I','z:d','z:g']},
+{id:'g_l',fam:'sl',nm:'Austenite + liquido',ty:'Campo bifase',co:['0,17–4,3 % C','1147–1493 °C'],
+ poly:[I,...LBC,E],lab:[1.55,1337,['Austenite','+ liquido']],
+ d:'Zona compresa tra il liquidus BC e il solidus IE. Raffreddando, dal liquido cristallizza austenite sotto forma di dendriti; il liquido residuo si arricchisce di carbonio seguendo la linea BC fino al punto eutettico.',
+ r:[['Fasi','austenite + liquido'],['Composizioni','il liquido segue la linea BC, l’austenite la linea IE']],rel:['p:B','p:I','p:E','p:C','z:g','z:liq']},
+{id:'g',fam:'aus',nm:'Austenite (γ)',ty:'Campo monofase',co:['0–2,06 % C','723–1493 °C'],
+ poly:[N,I,E,...rev(GS)],lab:[.95,1085,['Austenite (γ)']],
+ d:'Soluzione solida interstiziale di carbonio in ferro con reticolo cubico a facce centrate. Può contenere fino a circa 2,06 % di carbonio, a 1147 °C. È la fase di partenza di molti trattamenti termici, come la tempra.',
+ r:[['Fase','austenite γ (CFC)'],['Proprietà','duttile e tenace, non magnetica'],['Uso','forgiatura e laminazione a caldo, austenitizzazione prima della tempra']],rel:['p:E','p:S','p:G','p:N','z:g_a','z:g_cs']},
+{id:'g_a',fam:'aus',nm:'Austenite + ferrite',ty:'Campo bifase',co:['0–0,8 % C','723–911 °C'],
+ poly:[G,...GS,P],tag:[850,.09,828],lab:null,
+ d:'Zona compresa tra la linea GS e la linea GP. Negli acciai ipoeutettoidi (meno di 0,8 % C), raffreddando si separa ferrite α dall’austenite, che si arricchisce di carbonio fino a 0,8 % a 723 °C e si trasforma in perlite.',
+ r:[['Fasi','austenite + ferrite proeutettoide'],['Fine del campo','a 723 °C resta austenite di composizione eutettoide, che diventa perlite']],rel:['p:G','p:S','p:P','z:a_p','z:g']},
+{id:'a',fam:'aus',nm:'Ferrite (α)',ty:'Campo monofase',co:['0–0,02 % C','sotto 911 °C'],
+ poly:[G,P,Q,[0,500]],tag:[650,.012,640],thin:1,lab:null,
+ d:'Soluzione solida interstiziale di carbonio in ferro con reticolo cubico a corpo centrato, con al massimo 0,02 % C a 723 °C. È molle e duttile ed è ferromagnetica sotto 768 °C. Nel diagramma è una striscia quasi invisibile lungo l’asse del ferro puro.',
+ r:[['Fase','ferrite α (CCC)'],['Proprietà','molto duttile, bassa resistenza, ferromagnetica sotto 768 °C']],rel:['p:P','p:Q','p:M','z:a_p','z:g_a']},
+{id:'g_cs',fam:'cem',nm:'Austenite + cementite secondaria',ty:'Campo bifase',co:['0,8–2,06 % C','723–1147 °C'],
+ poly:[S,E,[2.06,723]],lab:[1.62,830,['Austenite','+ cementite','secondaria']],
+ d:'Zona compresa tra la linea ES e la verticale che scende da E. Negli acciai ipereutettoidi (0,8–2,06 % C), oltrepassata la linea ES la solubilità del carbonio nell’austenite diminuisce e precipita cementite secondaria, soprattutto ai bordi dei grani austenitici.',
+ r:[['Fasi','austenite + cementite secondaria (Fe₃C)'],['Linea ES','limite di solubilità del carbonio nell’austenite, detta anche Acm']],rel:['p:E','p:S','z:p_cs','z:g']},
+{id:'g_led_cs',fam:'cem',nm:'Austenite + ledeburite + cementite secondaria',ty:'Campo con tre costituenti',co:['2,06–4,3 % C','723–1147 °C'],
+ poly:[E,C,[4.3,723],[2.06,723]],lab:[3.2,925,['Austenite + ledeburite','+ cementite secondaria']],
+ d:'Campo delle ghise ipoeutettiche (2,06–4,3 % C) tra la linea eutettica e la linea eutettoide. Sono presenti austenite primaria, cristallizzata prima dell’eutettico, ledeburite formata a 1147 °C e cementite secondaria, che precipita dall’austenite al calare della temperatura.',
+ r:[['Costituenti','austenite + ledeburite + cementite secondaria'],['Ledeburite','miscuglio eutettico di austenite e cementite']],rel:['p:E','p:C','z:p_cs_led','z:g_l']},
+{id:'led_cp',fam:'cem',nm:'Ledeburite + cementite primaria',ty:'Campo con due costituenti',co:['4,3–6,67 % C','723–1147 °C'],
+ poly:[C,F,K,[4.3,723]],lab:[5.45,925,['Ledeburite','+ cementite primaria']],
+ d:'Campo delle ghise ipereutettiche (oltre 4,3 % C) tra la linea eutettica e la linea eutettoide. La cementite primaria è cristallizzata direttamente dal liquido, sopra 1147 °C, ed è circondata dalla ledeburite formata a 1147 °C.',
+ r:[['Costituenti','cementite primaria + ledeburite']],rel:['p:C','p:F','p:K','z:cp_led','z:l_cp']},
+{id:'l_cp',fam:'sl',nm:'Liquido + cementite primaria',ty:'Campo bifase',co:['4,3–6,67 % C','da 1147 °C alla linea CD'],
+ poly:[C,...CD,F],lab:[5.65,1212,['Liquido','+ cementite primaria']],
+ d:'Zona compresa tra il liquidus CD e la linea eutettica CF. Nelle ghise ipereutettiche, raffreddando, dal liquido cristallizza cementite primaria; il liquido residuo si porta a 4,3 % C e a 1147 °C solidifica come ledeburite.',
+ r:[['Fasi','liquido + cementite primaria (Fe₃C)']],rel:['p:C','p:D','p:F','z:led_cp','z:liq']},
+{id:'l_gr',fam:'sl',nm:'Liquido + grafite',ty:'Campo bifase, sistema stabile',co:['oltre 4,26 % C','sopra 1153 °C'],
+ poly:[C1,D1,[5.42,1600],[6.67,1600],D,...rev(CD)],lab:[5.9,1432,['Liquido + grafite']],stableOnly:1,
+ d:'Zona del sistema stabile a destra della linea C′D′. Il liquido, raffreddandosi, separa grafite primaria. Il campo continua verso la grafite (100 % C), fuori scala, e riguarda le ghise grigie molto ricche di carbonio.',
+ r:[['Fasi','liquido + grafite'],['Sistema','stabile ferro-grafite']],rel:["p:C'","p:D'",'z:liq','z:l_cp']},
+{id:'a_p',fam:'low',nm:'Ferrite + perlite',ty:'Campo con due costituenti',co:['0,02–0,8 % C','sotto 723 °C'],
+ poly:[P,S,[.8,500],Q],lab:[.42,600,['Ferrite','+ perlite']],
+ d:'Struttura degli acciai ipoeutettoidi a temperatura ambiente: grani chiari di ferrite proeutettoide e grani scuri di perlite. Aumentando il carbonio aumenta la quantità di perlite, quindi cresce la resistenza e cala la duttilità.',
+ r:[['Costituenti','ferrite + perlite'],['Esempio','con 0,4 % C circa metà della struttura è perlite']],rel:['p:P','p:S','z:g_a','z:p_cs']},
+{id:'p_cs',fam:'low',nm:'Perlite + cementite secondaria',ty:'Campo con due costituenti',co:['0,8–2,06 % C','sotto 723 °C'],
+ poly:[S,[2.06,723],[2.06,500],[.8,500]],lab:[1.43,600,['Perlite','+ cementite','secondaria']],
+ d:'Struttura degli acciai ipereutettoidi: perlite circondata da una rete di cementite secondaria lungo i bordi dei grani. La rete è dura e fragile, per questo i trattamenti termici tendono a evitarla o a spezzarla.',
+ r:[['Costituenti','perlite + cementite secondaria']],rel:['p:S','p:E','z:g_cs','z:a_p']},
+{id:'p_cs_led',fam:'low',nm:'Perlite + cementite secondaria + ledeburite trasformata',ty:'Campo con tre costituenti',co:['2,06–4,3 % C','sotto 723 °C'],
+ poly:[[2.06,723],[4.3,723],[4.3,500],[2.06,500]],lab:[3.18,600,['Perlite + cementite','secondaria','+ ledeburite trasformata']],
+ d:'Struttura delle ghise bianche ipoeutettiche: sotto 723 °C l’austenite si è trasformata in perlite e la ledeburite è diventata ledeburite trasformata, cioè perlite e cementite. È presente anche la cementite secondaria.',
+ r:[['Costituenti','perlite + cementite secondaria + ledeburite trasformata'],['Proprietà','molto dure e fragili']],rel:['p:E','p:C','z:g_led_cs','z:cp_led']},
+{id:'cp_led',fam:'low',nm:'Cementite primaria + ledeburite trasformata',ty:'Campo con due costituenti',co:['4,3–6,67 % C','sotto 723 °C'],
+ poly:[[4.3,723],K,L,[4.3,500]],lab:[5.45,600,['Cementite primaria','+ ledeburite trasformata']],
+ d:'Struttura delle ghise bianche ipereutettiche: lunghe lamelle di cementite primaria in una matrice di ledeburite trasformata. Sono i materiali più duri e più fragili del diagramma.',
+ r:[['Costituenti','cementite primaria + ledeburite trasformata']],rel:['p:C','p:L','p:K','z:led_cp']}
+];
+
+const FAMS=[
+ ['liq','Liquido',['liq']],
+ ['sl','Liquido + solido',['l_d','g_l','l_cp','l_gr']],
+ ['aus','Ferrite e austenite',['d','d_g','g','g_a','a']],
+ ['cem','Tra 723 e 1147 °C, con cementite',['g_cs','g_led_cs','led_cp']],
+ ['low','Sotto 723 °C',['a_p','p_cs','p_cs_led','cp_led']]
+];
+
+const LINES=[
+ {p:[A,B],c:''},{p:LBC,c:''},{p:[A,H],c:''},{p:[H,B],c:''},{p:[N,H],c:''},{p:[N,I],c:''},{p:[I,E],c:''},
+ {p:[E,F],c:''},{p:GS,c:''},{p:[E,S],c:''},{p:[P,K],c:''},{p:[P,Q],c:''},{p:[M,O],c:'thin'},{p:[D,L],c:''},{p:CD,c:'dot'},
+ {p:[E,[2.06,500]],c:'gd'},{p:[C,[4.3,500]],c:'gd'},{p:[S,[.8,500]],c:'gd'},
+ {p:[C1,[5.42,1600]],c:'st',s:1},{p:[[2.03,1153],[6.8,1153]],c:'st',s:1},{p:[[2.03,1153],[.7,738]],c:'st',s:1},{p:[[.02,738],[6.8,738]],c:'st',s:1}
+];
+
+const VIEWS=[
+ {id:'full',nm:'Diagramma intero',x0:0,x1:6.8,t0:500,t1:1600,xt:[0,1,2,3,4,5,6,6.67],ts:100},
+ {id:'peri',nm:'Angolo peritettico',x0:0,x1:.75,t0:1340,t1:1560,xs:.1,ts:20},
+ {id:'eutt',nm:'Zona eutettica',x0:1.8,x1:4.6,t0:1100,t1:1200,xs:.5,ts:20},
+ {id:'eutd',nm:'Zona eutettoide',x0:0,x1:1.3,t0:650,t1:950,xs:.2,ts:50}
+];
+
+/* ---------- stato e utilità ---------- */
+const CW=900,CH=640,MG={l:150,r:20,t:56,b:46};
+const IW=CW-MG.l-MG.r, IH=CH-MG.t-MG.b;
+let view=VIEWS[0], sel='p:S', show={stable:true,zones:true,pts:true};
+const PT=Object.fromEntries(PTS.map(p=>[p.id,p])), ZN=Object.fromEntries(ZONES.map(z=>[z.id,z]));
+const $=s=>document.querySelector(s);
+const sx=x=>MG.l+(x-view.x0)/(view.x1-view.x0)*IW, sy=t=>MG.t+(view.t1-t)/(view.t1-view.t0)*IH;
+const f1=n=>n.toFixed(1), fmt=n=>String(n).replace('.',','), pr=s=>s.replace("'",'′');
+const info=k=>k[0]==='p'?PT[k.slice(2)]:ZN[k.slice(2)];
+const famVar=z=>z.fam;
+const pathOf=pts=>'M'+pts.map(p=>f1(sx(p[0]))+' '+f1(sy(p[1]))).join('L');
+const polyOf=pts=>pts.map(p=>f1(sx(p[0]))+','+f1(sy(p[1]))).join(' ');
+const inView=p=>p[0]>=view.x0-1e-9&&p[0]<=view.x1+1e-9&&p[1]>=view.t0-1e-9&&p[1]<=view.t1+1e-9;
+
+function clipPoly(poly,r){
+  let out=poly;
+  const pl=[
+    {i:p=>p[0]>=r.x0,x:(a,b)=>{const t=(r.x0-a[0])/(b[0]-a[0]);return[r.x0,a[1]+t*(b[1]-a[1])]}},
+    {i:p=>p[0]<=r.x1,x:(a,b)=>{const t=(r.x1-a[0])/(b[0]-a[0]);return[r.x1,a[1]+t*(b[1]-a[1])]}},
+    {i:p=>p[1]>=r.t0,x:(a,b)=>{const t=(r.t0-a[1])/(b[1]-a[1]);return[a[0]+t*(b[0]-a[0]),r.t0]}},
+    {i:p=>p[1]<=r.t1,x:(a,b)=>{const t=(r.t1-a[1])/(b[1]-a[1]);return[a[0]+t*(b[0]-a[0]),r.t1]}}];
+  for(const q of pl){const inp=out;out=[];
+    for(let k=0;k<inp.length;k++){const a=inp[k],b=inp[(k+1)%inp.length],ai=q.i(a),bi=q.i(b);
+      if(ai&&bi)out.push(b);else if(ai&&!bi)out.push(q.x(a,b));else if(!ai&&bi){out.push(q.x(a,b));out.push(b);}}
+    if(!out.length)break;}
+  return out;
+}
+function centroidPx(poly){
+  const pp=poly.map(p=>[sx(p[0]),sy(p[1])]);let a=0,cx=0,cy=0;
+  for(let i=0;i<pp.length;i++){const[x0,y0]=pp[i],[x1,y1]=pp[(i+1)%pp.length],c=x0*y1-x1*y0;a+=c;cx+=(x0+x1)*c;cy+=(y0+y1)*c;}
+  a/=2;if(Math.abs(a)<1)return null;
+  const xs=pp.map(p=>p[0]),ys=pp.map(p=>p[1]);
+  return{x:cx/(6*a),y:cy/(6*a),w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)};
+}
+function ticks(a,b,step){const o=[];for(let v=Math.ceil(a/step-1e-9)*step;v<=b+1e-9;v+=step)o.push(+v.toFixed(4));return o;}
+const atToWt=a=>{const x=a/100;return 100*12.011*x/(12.011*x+55.845*(1-x));};
+
+/* ---------- disegno ---------- */
+function render(){
+  const v=view,full=v.id==='full';
+  let s=`<defs><clipPath id="pc"><rect x="${MG.l}" y="${MG.t}" width="${IW}" height="${IH}"/></clipPath>
+   <marker id="ar" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L8 4L0 8z" class="arh"/></marker></defs>`;
+  const xt=v.xt||ticks(v.x0,v.x1,v.xs), tt=ticks(v.t0,v.t1,v.ts);
+  // griglia e assi
+  xt.forEach(x=>{s+=`<line class="gl" x1="${f1(sx(x))}" x2="${f1(sx(x))}" y1="${MG.t}" y2="${MG.t+IH}"/>`;
+    s+=`<text class="tk" x="${f1(sx(x))}" y="${MG.t+IH+17}" text-anchor="middle">${fmt(x)}</text>`;});
+  tt.forEach(t=>{s+=`<line class="gl" x1="${MG.l}" x2="${MG.l+IW}" y1="${f1(sy(t))}" y2="${f1(sy(t))}"/>`;
+    s+=`<text class="tk" x="${MG.l-9}" y="${f1(sy(t)+4)}" text-anchor="end">${t}</text>`;});
+  s+=`<text class="at" x="${MG.l+IW/2}" y="${CH-8}" text-anchor="middle">Carbonio, % in peso</text>`;
+  s+=`<text class="at" x="${MG.l-9}" y="${MG.t-30}" text-anchor="end">Temperatura, °C</text>`;
+  if(full){
+    [0,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25].forEach(a=>{const w=atToWt(a);
+      s+=`<line class="gl" x1="${f1(sx(w))}" x2="${f1(sx(w))}" y1="${MG.t-5}" y2="${MG.t}" style="stroke:var(--ink2)"/>`;
+      s+=`<text class="tk" x="${f1(sx(w))}" y="${MG.t-9}" text-anchor="middle">${fmt(a)}</text>`;});
+    s+=`<text class="at" x="${MG.l+IW/2}" y="14" text-anchor="middle">Carbonio, % in atomi</text>`;
+  }
+  // zone
+  s+=`<g clip-path="url(#pc)">`;
+  const zs=ZONES.filter(z=>show.stable||!z.stableOnly);
+  zs.forEach(z=>{const poly=(!show.stable&&z.polyOff)?z.polyOff:z.poly;
+    s+=`<polygon class="z ${z.fam}${z.thin?' thin':''}" data-k="z:${z.id}" tabindex="0" role="button" aria-label="Zona: ${z.nm}" points="${polyOf(poly)}"/>`;});
+  // linee
+  s+=LINES.filter(l=>show.stable||!l.s).map(l=>`<path class="ln ${l.c}" d="${pathOf(l.p)}" pointer-events="none"/>`).join('');
+  s+=`</g>`;
+  if(full&&show.stable){
+    [1153,738].forEach(t=>{s+=`<path d="M${f1(sx(6.8)-12)} ${f1(sy(t))}L${f1(sx(6.8))} ${f1(sy(t))}" stroke="var(--ink2)" stroke-width="1.7" marker-end="url(#ar)" pointer-events="none"/>`;});
+  }
+  // nomi zone
+  if(show.zones){
+    zs.forEach(z=>{
+      if(full){
+        if(z.lab){const[x,t,ls]=z.lab;
+          s+=`<text class="zl" x="${f1(sx(x))}" y="${f1(sy(t)-(ls.length-1)*7+4)}">${ls.map((l,i)=>`<tspan x="${f1(sx(x))}" dy="${i?14:0}">${l}</tspan>`).join('')}</text>`;}
+        else if(z.tag){const[tT,tx,tz]=z.tag,ty=sy(tT),px=sx(tx),py=sy(tz);
+          s+=`<g class="tag" data-k="z:${z.id}" tabindex="0" role="button" aria-label="Zona: ${z.nm}"><line x1="128" y1="${f1(ty-4)}" x2="${f1(px)}" y2="${f1(py)}"/><circle cx="${f1(px)}" cy="${f1(py)}" r="2.6"/><text x="6" y="${f1(ty)}">${z.nm}</text></g>`;}
+      }else{
+        const poly=(!show.stable&&z.polyOff)?z.polyOff:z.poly,cl=clipPoly(poly,v);if(cl.length<3)return;
+        const c=centroidPx(cl);if(!c)return;
+        const tw=z.nm.length*6.3+8;
+        if(c.w>tw&&c.h>18)s+=`<text class="zl" x="${f1(c.x)}" y="${f1(c.y+4)}">${z.nm}</text>`;
+      }
+    });
+  }
+  // contorno asse sinistro e cornice
+  s+=`<rect class="axl" x="${MG.l}" y="${MG.t}" width="${IW}" height="${IH}"/>`;
+  // punti
+  if(show.pts){
+    PTS.filter(p=>(show.stable||p.k==='m')&&inView([p.x,p.T])).forEach(p=>{
+      const x=sx(p.x),y=sy(p.T);
+      s+=`<g class="pt ${p.k}" data-k="p:${p.id}" tabindex="0" role="button" aria-label="Punto ${pr(p.id)}: ${p.nm}" transform="translate(${f1(x)} ${f1(y)})">
+        <circle class="hit" r="11"/><circle class="ring" r="9"/><circle class="dot" r="4.3"/>
+        <text x="${p.l[0]}" y="${p.l[1]}" text-anchor="${p.l[2]}">${pr(p.id)}</text></g>`;});
+  }
+  $('#svg').innerHTML=s;
+  mark();
+}
+function mark(){
+  document.querySelectorAll('[data-k]').forEach(e=>e.classList.toggle('sel',e.dataset.k===sel));
+}
+
+/* ---------- scheda ---------- */
+const famOf=id=>ZN[id].fam;
+function chipHTML(k){const o=info(k);
+  if(k[0]==='p')return `<button class="chip pc" data-k="${k}" title="${o.nm}">${pr(o.id)}</button>`;
+  return `<button class="chip" data-k="${k}"><i style="background:var(--f-${o.fam})"></i>${o.nm}</button>`;}
+function panel(){
+  const o=info(sel),isP=sel[0]==='p';
+  const kick=isP?(o.k==='m'?'Punto · sistema metastabile Fe–Fe₃C':'Punto · sistema stabile Fe–grafite'):`Zona · ${o.ty}`;
+  const idHTML=isP?`<span class="id">${pr(o.id)}</span>`:'';
+  $('#panel').innerHTML=`<p class="kick">${kick}</p>
+   <h2>${idHTML}<span>${o.nm}</span></h2>
+   <div class="coords">${o.co.map(c=>`<span>${c}</span>`).join('')}</div>
+   <p class="def">${o.d}</p>
+   <dl>${o.r.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('')}</dl>
+   <div class="rel"><h3>Vedi anche</h3><div class="chips">${o.rel.map(chipHTML).join('')}</div></div>`;
+}
+function lists(){
+  const mp=PTS.filter(p=>p.k==='m'),sp=PTS.filter(p=>p.k==='s');
+  $('#listPts').innerHTML=`<div class="grp"><h3>Sistema metastabile Fe–Fe₃C</h3><div class="chips">${mp.map(p=>chipHTML('p:'+p.id)).join('')}</div></div>
+   <div class="grp"><h3>Sistema stabile Fe–grafite</h3><div class="chips">${sp.map(p=>chipHTML('p:'+p.id)).join('')}</div></div>`;
+  $('#listZones').innerHTML=FAMS.map(g=>`<div class="grp"><h3>${g[1]}</h3><div class="chips">${g[2].map(id=>chipHTML('z:'+id)).join('')}</div></div>`).join('');
+}
+function choose(k,scroll){
+  sel=k;panel();mark();
+  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.dataset.k===k&&c.closest('.index')));
+  // se il punto non è visibile nell'ingrandimento corrente, torna alla vista intera
+  if(k[0]==='p'){const p=PT[k.slice(2)];if(!inView([p.x,p.T])&&view.id!=='full'){setView('full');}}
+  if(scroll&&window.matchMedia('(max-width:1060px)').matches)$('#panel').scrollIntoView({block:'nearest'});
+}
+function setView(id){
+  view=VIEWS.find(v=>v.id===id);
+  document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===id));
+  render();
+}
+
+/* ---------- eventi ---------- */
+$('#views').innerHTML=VIEWS.map(v=>`<button type="button" data-v="${v.id}" aria-pressed="${v.id==='full'}">${v.nm}</button>`).join('');
+$('#views').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.v);});
+$('#tgStable').addEventListener('change',e=>{show.stable=e.target.checked;
+  if(!show.stable&&sel[0]==='p'&&PT[sel.slice(2)].k==='s')sel='p:S';
+  if(!show.stable&&sel==='z:l_gr')sel='z:liq';
+  render();panel();});
+$('#tgZones').addEventListener('change',e=>{show.zones=e.target.checked;render();});
+$('#tgPts').addEventListener('change',e=>{show.pts=e.target.checked;render();});
+document.addEventListener('click',e=>{const t=e.target.closest('[data-k]');if(t)choose(t.dataset.k,true);});
+document.addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;
+  const t=e.target.closest('svg [data-k]');if(t){e.preventDefault();choose(t.dataset.k,true);}});
+const tip=$('#tip');
+$('#svg').addEventListener('pointermove',e=>{
+  if(e.pointerType==='touch')return;
+  const t=e.target.closest('[data-k]');
+  if(!t){tip.classList.remove('on');return;}
+  const o=info(t.dataset.k),isP=t.dataset.k[0]==='p';
+  tip.textContent=isP?`${pr(o.id)} · ${o.nm}`:o.nm;
+  tip.style.left=Math.min(e.clientX+14,innerWidth-270)+'px';tip.style.top=(e.clientY+16)+'px';tip.classList.add('on');
+  document.querySelectorAll('.z.hov').forEach(z=>z.classList.remove('hov'));
+  if(!isP&&t.classList.contains('tag')){const z=document.querySelector(`polygon[data-k="${t.dataset.k}"]`);if(z)z.classList.add('hov');}
+});
+$('#svg').addEventListener('pointerleave',()=>{tip.classList.remove('on');document.querySelectorAll('.z.hov').forEach(z=>z.classList.remove('hov'));});
+
+lists();render();panel();
+document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('sel',c.dataset.k===sel&&!!c.closest('.index')));
+</script>
 </body>
 </html>
